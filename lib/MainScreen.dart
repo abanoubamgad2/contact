@@ -1,8 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-class MainScreen extends StatelessWidget {
+import 'OnPress.dart' show pickAndReplaceImage;
+
+class MainScreen extends StatefulWidget {
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+
+class _MainScreenState extends State<MainScreen> {
+  File? _contactImage;
   @override
   Widget build(BuildContext context) {
+    String name = '';
+    String email = '';
+    int phone = 0;
     return Scaffold(
       backgroundColor: Color.fromRGBO(41, 56, 77, 1),
       appBar: AppBar(
@@ -68,27 +82,53 @@ class MainScreen extends StatelessWidget {
                                       mainAxisAlignment: MainAxisAlignment
                                           .start,
                                       children: [
-                                        ElevatedButton(
-                                          style: ButtonStyle(
-                                            shape: MaterialStateProperty.all(
-                                              RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.circular(25),
-                                                side: BorderSide(
-                                                  color: Color(0xfff2e5cc),
-                                                  width: 2,
+                                        Container(width: 125,
+                                          height: 125,
+                                          child: ElevatedButton(
+                                            style: ButtonStyle(
+                                              shape: MaterialStateProperty.all(
+                                                RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius
+                                                      .circular(8),
+                                                  side: BorderSide(
+                                                    color: Color(0xfff2e5cc),
+                                                    width: 2,
+                                                  ),
                                                 ),
                                               ),
+                                              backgroundColor: MaterialStateProperty
+                                                  .all(
+                                                Color.fromRGBO(41, 56, 77, 1),
+                                              ),
+                                              padding: MaterialStateProperty
+                                                  .all(EdgeInsets
+                                                  .zero), // إزالة الحشو الداخلي
                                             ),
-                                            backgroundColor:
-                                            MaterialStateProperty.all(
-                                              Color.fromRGBO(41, 56, 77, 1),
-                                            ),
-                                          ),
-                                          onPressed: () {},
-                                          child: Image(
-                                            image: AssetImage(
-                                              'assets/images/image.png',
+                                            onPressed: () async {
+                                              final newImage = await pickAndReplaceImage();
+                                              if (newImage != null) {
+                                                setState(() {
+                                                  _contactImage = newImage;
+                                                });
+                                              }
+                                            },
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius
+                                                  .circular(23),
+                                              child: _contactImage != null
+                                                  ? Image.file(
+                                                _contactImage!,
+                                                width: 125, // تعديل حسب احتياجك
+                                                height: 125,
+                                                fit: BoxFit.cover,
+                                              )
+                                                  : Image.asset(
+                                                'assets/images/image.png',
+                                                // الصورة الافتراضية داخل الزر
+                                                width: 125,
+                                                height: 125,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -134,6 +174,9 @@ class MainScreen extends StatelessWidget {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: TextFormField(
+                                      onChanged: (text) {
+                                        name = text;
+                                      },
                                       enabled: true,
                                       style: TextStyle(
                                         color: Color(0xfff2e5cc),
@@ -163,7 +206,9 @@ class MainScreen extends StatelessWidget {
                                   SizedBox(height: 15),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: TextFormField(
+                                    child: TextFormField(onChanged: (text) {
+                                      email = text;
+                                    },
                                       enabled: true,
                                       style: TextStyle(
                                         color: Color(0xfff2e5cc),
@@ -194,6 +239,9 @@ class MainScreen extends StatelessWidget {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: TextFormField(
+                                      onChanged: (text) {
+                                        phone = int.parse(text);
+                                      },
                                       enabled: true,
                                       style: TextStyle(
                                         color: Color(0xfff2e5cc),
@@ -227,18 +275,37 @@ class MainScreen extends StatelessWidget {
                                         child: ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor: MaterialStateProperty
-                                                .all(
-                                              Color(0xfff2e5cc),
-                                            ),
+                                                .all(Color(0xfff2e5cc)),
                                             shape: MaterialStateProperty.all(
                                               RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.circular(25),
+                                                borderRadius: BorderRadius
+                                                    .circular(25),
                                               ),
                                             ),
                                           ),
-                                          onPressed: () {
-                                            Navigator.pop(context);
+                                          onPressed: () async {
+                                            // 1. أولاً: حفظ البيانات بما فيها الصورة
+                                            final contactData = {
+                                              'name': name,
+                                              'email': email,
+                                              'phone': phone,
+                                              'image': _contactImage,
+                                              // سيتم حفظ الصورة هنا
+                                            };
+
+                                            // 2. ثانياً: إغلاق الصفحة وإرجاع البيانات
+                                            Navigator.pop(context, contactData);
+
+                                            // 3. ثالثاً: مسح الصورة من المتغير
+                                            await Future.delayed(
+                                                Duration(milliseconds: 300));
+
+                                            if (mounted) {
+                                              setState(() {
+                                                _contactImage =
+                                                null; // مسح الصورة من المتغير
+                                              });
+                                            }
                                           },
                                           child: Text(
                                             'Enter User',
