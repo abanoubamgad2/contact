@@ -4,20 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddContactBottomSheet {
-  static void show(
+  static Future<Map<String, dynamic>?> show(
     BuildContext context, {
     required File? contactImage,
     required Function(File?) onImageSelected,
   }) {
-    String name = '';
-    String email = '';
-    String phone = '';
-
-    showModalBottomSheet(
+    return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            String name = '';
+            String email = '';
+            String phone = '';
+            File? currentImage = contactImage;
+
             return Container(
               decoration: BoxDecoration(
                 color: Color.fromRGBO(41, 56, 77, 1),
@@ -32,12 +33,27 @@ class AddContactBottomSheet {
                   children: [
                     _buildImageSection(
                       context,
-                      contactImage,
-                      onImageSelected,
+                      currentImage,
+                          (image) {
+                        setState(() {
+                          currentImage = image;
+                        });
+                        onImageSelected(image);
+                      },
                       setState,
                     ),
-                    _buildFormFields(name, email, phone),
-                    _buildSaveButton(context, name, email, phone, contactImage),
+                    _buildFormFields(
+                      onNameChanged: (text) => name = text,
+                      onEmailChanged: (text) => email = text,
+                      onPhoneChanged: (text) => phone = text,
+                    ),
+                    _buildSaveButton(
+                      context,
+                          () => name,
+                          () => email,
+                          () => phone,
+                          () => currentImage,
+                    ),
                   ],
                 ),
               ),
@@ -83,6 +99,9 @@ class AddContactBottomSheet {
                 );
                 if (pickedFile != null) {
                   final file = File(pickedFile.path);
+                  setState(() {
+                    contactImage = file;
+                  });
                   if (await file.exists()) {
                     setState(() {
                       onImageSelected(file);
@@ -94,10 +113,12 @@ class AddContactBottomSheet {
                 borderRadius: BorderRadius.circular(23),
                 child: contactImage != null
                     ? Image.file(
+
                         contactImage,
                         width: 125,
                         height: 125,
                         fit: BoxFit.cover,
+
                       )
                     : Image.asset(
                         'assets/images/image.png',
@@ -149,12 +170,16 @@ class AddContactBottomSheet {
     );
   }
 
-  static Widget _buildFormFields(String name, String email, String phone) {
+  static Widget _buildFormFields({
+    required Function(String) onNameChanged,
+    required Function(String) onEmailChanged,
+    required Function(String) onPhoneChanged,
+  }) {
     return Column(
       children: [
-        _buildTextField('User Name', (text) => name = text),
-        _buildTextField('Email', (text) => email = text),
-        _buildTextField('Phone Number', (text) => phone = text),
+        _buildTextField('User Name', onNameChanged),
+        _buildTextField('Email', onEmailChanged),
+        _buildTextField('Phone Number', onPhoneChanged),
       ],
     );
   }
@@ -184,10 +209,10 @@ class AddContactBottomSheet {
 
   static Widget _buildSaveButton(
     BuildContext context,
-    String name,
-    String email,
-    String phone,
-    File? contactImage,
+      String Function() getName,
+      String Function() getEmail,
+      String Function() getPhone,
+      File? Function() getImage,
   ) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -205,10 +230,10 @@ class AddContactBottomSheet {
               ),
               onPressed: () {
                 final contactData = {
-                  'name': name,
-                  'email': email,
-                  'phone': phone,
-                  'image': contactImage,
+                  'name': getName(),
+                  'email': getEmail(),
+                  'phone': getPhone(),
+                  'image': getImage(),
                 };
                 Navigator.pop(context, contactData);
               },

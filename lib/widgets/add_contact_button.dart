@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AddContactButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const AddContactButton({required this.onPressed});
+  const AddContactButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
